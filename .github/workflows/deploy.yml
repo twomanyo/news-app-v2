@@ -5,6 +5,16 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: '배포 환경 선택'
+        required: false
+        default: 'production'
+        type: choice
+        options:
+        - production
+        - staging
 
 # GitHub Pages 배포를 위한 권한 설정
 permissions:
