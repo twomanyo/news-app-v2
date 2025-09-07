@@ -400,14 +400,12 @@ const ITNewsApp = () => {
 
   const toggleBookmark = async (newsId) => {
     if (!db || !userId) return;
-    const bookmarksCollectionRef = collection(db, `artifacts/${APP_ID}/users/${userId}/bookmarks`);
+    const bookmarkDocRef = doc(db, `artifacts/${APP_ID}/users/${userId}/bookmarks`, newsId);
     try {
       if (bookmarkedNewsIds.has(newsId)) {
-        const q = query(bookmarksCollectionRef, where("newsId", "==", newsId));
-        const snapshot = await getDocs(q);
-        snapshot.forEach(d => deleteDoc(doc(db, `artifacts/${APP_ID}/users/${userId}/bookmarks`, d.id)));
+        await deleteDoc(bookmarkDocRef);
       } else {
-        await addDoc(bookmarksCollectionRef, { newsId, timestamp: new Date().toISOString() });
+        await setDoc(bookmarkDocRef, { newsId, timestamp: new Date().toISOString() });
       }
     } catch (e) { console.error("Bookmark toggle failed: ", e); }
   };
