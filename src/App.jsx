@@ -235,37 +235,17 @@ const ITNewsApp = () => {
       }
 
       const dataRows = rows.slice(1);
-      const parsedNews = dataRows.map((row, index) => {
-        const today = new Date().toISOString().split("T")[0];
-        const newsItem = {
-          id: `news-${activeTab}-${index}`,
-          title: row[dataMapping.title] || "",
-          url: row[dataMapping.url] || "",
-          date: row[dataMapping.date] || today,
-        };
+      const parsedNews = dataRows.map((row) => {
+        const newsItem = {};
 
-        if (activeTab === 'deep') {
-          newsItem.newsContent = row[dataMapping.newsContent] || "";
-          newsItem.detailedContent1 = row[dataMapping.detailedContent1] || "";
-          newsItem.detailedContent2 = row[dataMapping.detailedContent2] || "";
-          newsItem.detailedContent3 = row[dataMapping.detailedContent3] || "";
-          newsItem.detailedContent4 = row[dataMapping.detailedContent4] || "";
-          newsItem.detailedContent5 = row[dataMapping.detailedContent5] || "";
-          newsItem.imageUrl = row[dataMapping.imageUrl] || "";
-        } else {
-          newsItem.keyword = row[dataMapping.keyword] || "";
-          newsItem.source = row[dataMapping.source] || "";
-          newsItem.tags = row[dataMapping.tags] || "";
-          newsItem.summary = row[dataMapping.summary] || "";
-          newsItem.content = row[dataMapping.content] || "";
-          newsItem.imageUrl = row[dataMapping.imageUrl] || "";
-          newsItem.nickname = row[dataMapping.nickname] || "";
-          newsItem.companyName = row[dataMapping.companyName] || "";
-          newsItem.jobTitle = row[dataMapping.jobTitle] || "";
-          newsItem.recommendationStrength = parseInt(row[dataMapping.recommendationStrength]) || 0;
-          newsItem.recommendationReason = row[dataMapping.recommendationReason] || "";
-          newsItem.likes = parseInt(row[dataMapping.likes]) || 0;
-        }
+        // Assign data from row to newsItem object
+        Object.keys(dataMapping).forEach(key => {
+          newsItem[key] = row[dataMapping[key]] || '';
+        });
+
+        // Generate a consistent, unique ID based on title and date
+        newsItem.id = `${newsItem.title.replace(/[^a-zA-Z0-9가-힣]/g, '')}-${newsItem.date}`;
+
         return newsItem;
       }).filter(news => news.title);
 
@@ -287,37 +267,36 @@ const ITNewsApp = () => {
     fetchNews();
   }, [fetchNews]);
 
-
   // Simulated data for development/fallback
   const loadSimulatedData = useCallback((tab) => {
     const commonSimulatedData = [
       {
-        id: "news-all-0-2025-08-01-네이버, AI", title: "네이버, AI 검색 서비스 대폭 개선... 정확도 30% 향상", keyword: "네이버", source: "IT조선", tags: "#AI #검색 #기술혁신 #추천", url: "https://example.com/news1", date: "2025-08-01", time: '16:10', summary: "네이버가 자체 개발한 AI 기술을 적용하여 검색 정확도를 크게 개선했으며, 사용자 만족도가 크게 향상될 것으로 예상됩니다.", content: "이는 대규모 언어 모델(LLM)과 최신 검색 알고리즘을 결합한 결과입니다. 사용자들은 이제 더 빠르고 정확한 정보를 얻을 수 있을 것으로 기대됩니다.",
+        title: "네이버, AI 검색 서비스 대폭 개선... 정확도 30% 향상", keyword: "네이버", source: "IT조선", tags: "#AI #검색 #기술혁신 #추천", url: "https://example.com/news1", date: "2025-08-01", time: '16:10', summary: "네이버가 자체 개발한 AI 기술을 적용하여 검색 정확도를 크게 개선했으며, 사용자 만족도가 크게 향상될 것으로 예상됩니다.", content: "이는 대규모 언어 모델(LLM)과 최신 검색 알고리즘을 결합한 결과입니다. 사용자들은 이제 더 빠르고 정확한 정보를 얻을 수 있을 것으로 기대됩니다.",
         imageUrl: "https://placehold.co/100x80/2DB400/FFFFFF?text=NAVER_NEWS",
         nickname: "개발자김", companyName: "네이버", jobTitle: "AI 개발자", recommendationStrength: 5, recommendationReason: "이 기사는 AI 검색의 미래를 보여줍니다.", likes: 12
       },
       {
-        id: "news-all-1-2025-08-01-토스, 투자", title: "토스, 투자 플랫폼 '토스증권' 월 거래액 10조원 돌파", keyword: "토스", source: "매일경제", tags: "#핀테크 #투자 #거래액 #추천", url: "https://example.com/news2", date: "2025-07-31", time: '16:00', summary: "토스증권이 월 거래액 10조원을 돌파하며 핀테크 시장의 새로운 강자로 떠올랐습니다.", content: "간편한 인터페이스와 다양한 투자 상품으로 2030 세대의 높은 지지를 받고 있으며, 시장 점유율을 빠르게 확대하고 있습니다.",
+        title: "토스, 투자 플랫폼 '토스증권' 월 거래액 10조원 돌파", keyword: "토스", source: "매일경제", tags: "#핀테크 #투자 #거래액 #추천", url: "https://example.com/news2", date: "2025-07-31", time: '16:00', summary: "토스증권이 월 거래액 10조원을 돌파하며 핀테크 시장의 새로운 강자로 떠올랐습니다.", content: "간편한 인터페이스와 다양한 투자 상품으로 2030 세대의 높은 지지를 받고 있으며, 시장 점유율을 빠르게 확대하고 있습니다.",
         imageUrl: "https://placehold.co/100x80/0046FF/FFFFFF?text=TOSS_NEWS",
         nickname: "투자박", companyName: "토스", jobTitle: "증권 애널리스트", recommendationStrength: 4, recommendationReason: "핀테크 투자의 중요성을 강조합니다.", likes: 8
       },
       {
-        id: "news-all-2-2025-08-01-카카오, 새로운", title: "카카오, 새로운 소셜 서비스 '카카오뷰' 출시", keyword: "카카오", source: "전자신문", tags: "#소셜 #플랫폼 #신규서비스", url: "https://example.com/news3", date: "2025-07-31", time: '15:30', summary: "카카오가 콘텐츠 큐레이션 기반의 새로운 소셜 서비스 '카카오뷰'를 출시하며 플랫폼 영향력 강화에 나섰습니다.", content: "사용자들이 직접 콘텐츠를 큐레이션하고 발행할 수 있는 기능을 제공하며, 새로운 정보 소비 방식을 제안합니다.",
+        title: "카카오, 새로운 소셜 서비스 '카카오뷰' 출시", keyword: "카카오", source: "전자신문", tags: "#소셜 #플랫폼 #신규서비스", url: "https://example.com/news3", date: "2025-07-31", time: '15:30', summary: "카카오가 콘텐츠 큐레이션 기반의 새로운 소셜 서비스 '카카오뷰'를 출시하며 플랫폼 영향력 강화에 나섰습니다.", content: "사용자들이 직접 콘텐츠를 큐레이션하고 발행할 수 있는 기능을 제공하며, 새로운 정보 소비 방식을 제안합니다.",
         imageUrl: "https://placehold.co/100x80/F9E000/000000?text=KAKAO_NEWS",
         nickname: "콘텐츠이", companyName: "카카오", jobTitle: "서비스 기획자", recommendationStrength: 3, recommendationReason: "새로운 소셜 경험을 위한 필수 서비스.", likes: 25
       },
       {
-        id: "news-all-3-2025-08-01-당근마켓, 지역", title: "당근마켓, 지역 커뮤니티 활성화로 월 사용자 2천만 명 달성", keyword: "당근마켓", source: "블로터", tags: "#커뮤니티 #중고거래 #추천", url: "https://example.com/news4", date: "2025-07-30", time: '10:00', summary: "당근마켓이 단순 중고거래를 넘어 지역 커뮤니티 플랫폼으로 자리매김하며 월간 활성 사용자(MAU) 2천만 명을 돌파했습니다.", content: "이웃과의 소통과 정보 교환을 통해 지역 생활에 필수적인 앱으로 성장했으며, 다양한 연령대의 사용자를 확보하고 있습니다.",
+        title: "당근마켓, 지역 커뮤니티 활성화로 월 사용자 2천만 명 달성", keyword: "당근마켓", source: "블로터", tags: "#커뮤니티 #중고거래 #추천", url: "https://example.com/news4", date: "2025-07-30", time: '10:00', summary: "당근마켓이 단순 중고거래를 넘어 지역 커뮤니티 플랫폼으로 자리매김하며 월간 활성 사용자(MAU) 2천만 명을 돌파했습니다.", content: "이웃과의 소통과 정보 교환을 통해 지역 생활에 필수적인 앱으로 성장했으며, 다양한 연령대의 사용자를 확보하고 있습니다.",
         imageUrl: "https://placehold.co/100x80/FF6F00/FFFFFF?text=DAANGN_NEWS",
         nickname: "마케터정", companyName: "당근마켓", jobTitle: "마케팅 전문가", recommendationStrength: 5, recommendationReason: "지역 기반 서비스의 성공 사례입니다.", likes: 40
       },
       {
-        id: "news-all-4-2025-08-01-새로운 기술", title: "새로운 기술 동향, 블록체인 기반 서비스 확산", keyword: "블록체인", source: "테크월드", tags: "#블록체인 #기술동향", url: "https://example.com/news5", date: "2025-08-01", time: '09:00', summary: "블록체인 기술이 다양한 산업 분야로 확산되며 새로운 서비스 모델을 제시하고 있습니다.", content: "금융, 유통, 제조 등 여러 분야에서 블록체인 기반의 혁신적인 솔루션이 등장하고 있으며, 이에 대한 기대감이 커지고 있습니다.",
+        title: "새로운 기술 동향, 블록체인 기반 서비스 확산", keyword: "블록체인", source: "테크월드", tags: "#블록체인 #기술동향", url: "https://example.com/news5", date: "2025-08-01", time: '09:00', summary: "블록체인 기술이 다양한 산업 분야로 확산되며 새로운 서비스 모델을 제시하고 있습니다.", content: "금융, 유통, 제조 등 여러 분야에서 블록체인 기반의 혁신적인 솔루션이 등장하고 있으며, 이에 대한 기대감이 커지고 있습니다.",
         imageUrl: "https://placehold.co/100x80/4A90E2/FFFFFF?text=BLOCKCHAIN",
         nickname: "", companyName: "", jobTitle: "", recommendationStrength: 0, recommendationReason: "", likes: 7
       },
       {
-        id: "news-all-5-2025-08-01-클라우드 서비스", title: "클라우드 서비스, 기업 디지털 전환 핵심으로 부상", keyword: "클라우드", source: "디지털데일리", tags: "#클라우드 #디지털전환", url: "https://example.com/news6", date: "2025-08-01", time: '08:00', summary: "클라우드 컴퓨팅이 기업의 디지털 전환을 가속화하는 핵심 기술로 주목받고 있습니다.", content: "유연성과 확장성을 바탕으로 기업 IT 인프라의 효율성을 극대화하며, 새로운 비즈니스 기회를 창출하고 있습니다.",
+        title: "클라우드 서비스, 기업 디지털 전환 핵심으로 부상", keyword: "클라우드", source: "디지털데일리", tags: "#클라우드 #디지털전환", url: "https://example.com/news6", date: "2025-08-01", time: '08:00', summary: "클라우드 컴퓨팅이 기업의 디지털 전환을 가속화하는 핵심 기술로 주목받고 있습니다.", content: "유연성과 확장성을 바탕으로 기업 IT 인프라의 효율성을 극대화하며, 새로운 비즈니스 기회를 창출하고 있습니다.",
         imageUrl: "https://placehold.co/100x80/FF9900/FFFFFF?text=CLOUD",
         nickname: "클라우드김", companyName: "AWS", jobTitle: "클라우드 아키텍트", recommendationStrength: 4, recommendationReason: "클라우드 도입을 고민하는 기업에게 필독!", likes: 15
       },
@@ -325,7 +304,7 @@ const ITNewsApp = () => {
 
     const deepSimulatedData = [
       {
-        id: "news-deep-0", title: "Deep Learning, 의료 진단 혁신을 이끌다",
+        title: "Deep Learning, 의료 진단 혁신을 이끌다",
         newsContent: "최신 딥러닝 기술이 의료 영상 분석에 적용되어 질병 진단 정확도를 크게 높이고 있습니다.",
         detailedContent1: "알파고가 의료 분야에 적용된 이후, 인공지능 기반의 진단 보조 시스템은 암 조기 발견, 희귀 질환 진단 등 다양한 영역에서 인간 의사의 역량을 보완하며 혁신을 가져오고 있습니다.",
         detailedContent2: "특히, 딥러닝 모델은 방대한 의료 데이터를 학습하여 미세한 패턴까지 인식함으로써 진단의 신뢰도를 향상시키고 있습니다.",
@@ -337,7 +316,7 @@ const ITNewsApp = () => {
         date: "2025-08-22",
       },
       {
-        id: "news-deep-1", title: "자율주행 기술, 딥러닝으로 안전성 강화",
+        title: "자율주행 기술, 딥러닝으로 안전성 강화",
         newsContent: "자율주행 자동차의 인지 및 판단 시스템이 딥러닝 알고리즘을 통해 더욱 정교해지고 있습니다.",
         detailedContent1: "테슬라, 구글 웨이모 등 선두 기업들은 딥러닝 기반의 컴퓨터 비전과 센서 퓨전 기술을 활용하여 복잡한 도로 상황을 정확하게 인식하고 예측하는 데 집중하고 있습니다.",
         detailedContent2: "이는 악천후, 야간 주행 등 다양한 환경에서도 안정적인 자율주행을 가능하게 하며, 사고 발생률을 획기적으로 줄일 것으로 기대됩니다.",
@@ -349,7 +328,7 @@ const ITNewsApp = () => {
         date: "2025-08-21",
       },
       {
-        id: "news-deep-2", title: "생성형 AI, 콘텐츠 산업의 판도를 바꾸다",
+        title: "생성형 AI, 콘텐츠 산업의 판도를 바꾸다",
         newsContent: "텍스트, 이미지, 비디오 등 다양한 형태의 콘텐츠를 생성하는 AI 기술이 빠르게 발전하고 있습니다.",
         detailedContent1: "달리(DALL-E), 미드저니(Midjourney)와 같은 생성형 AI 모델들은 예술, 디자인, 마케팅 등 콘텐츠 제작 전반에 혁신을 가져오고 있습니다.",
         detailedContent2: "사용자의 간단한 지시만으로 고품질의 결과물을 만들어내며, 창작의 경계를 확장하고 새로운 비즈니스 기회를 창출하고 있습니다.",
@@ -369,14 +348,19 @@ const ITNewsApp = () => {
       dataToLoad = commonSimulatedData;
     }
 
-    setNewsData(dataToLoad);
-    if (dataToLoad.length > 0) {
-      const latest = dataToLoad.sort((a, b) => new Date(b.date) - new Date(a.date))[0].date;
+    // Generate a consistent ID for each simulated news item
+    const parsedNews = dataToLoad.map(news => ({
+      ...news,
+      id: `${news.title.replace(/[^a-zA-Z0-9가-힣]/g, '')}-${news.date}`
+    }));
+
+    setNewsData(parsedNews);
+    if (parsedNews.length > 0) {
+      const latest = parsedNews.sort((a, b) => new Date(b.date) - new Date(a.date))[0].date;
       setLatestDate(latest);
     }
     setLoading(false);
   }, []);
-
 
   // --- Firestore Listeners ---
   useEffect(() => {
