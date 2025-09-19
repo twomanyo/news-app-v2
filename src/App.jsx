@@ -58,8 +58,27 @@ const ITNewsApp = () => {
   const [userId, setUserId] = useState(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
 
+  // localStorage 유틸리티 함수들
+  const getBookmarksFromStorage = () => {
+    try {
+      const bookmarks = localStorage.getItem('news-bookmarks');
+      return bookmarks ? new Set(JSON.parse(bookmarks)) : new Set();
+    } catch (error) {
+      console.error('북마크 데이터 로드 실패:', error);
+      return new Set();
+    }
+  };
+
+  const saveBookmarksToStorage = (bookmarks) => {
+    try {
+      localStorage.setItem('news-bookmarks', JSON.stringify([...bookmarks]));
+    } catch (error) {
+      console.error('북마크 데이터 저장 실패:', error);
+    }
+  };
+
   // State for application features
-  const [bookmarkedNewsIds, setBookmarkedNewsIds] = useState(new Set());
+  const [bookmarkedNewsIds, setBookmarkedNewsIds] = useState(() => getBookmarksFromStorage());
   const [aiInsights, setAiInsights] = useState({});
   const [loadingInsight, setLoadingInsight] = useState({});
   const [aiInsightMetrics, setAiInsightMetrics] = useState({});
@@ -362,15 +381,16 @@ const ITNewsApp = () => {
     setLoading(false);
   }, []);
 
-  // --- Firestore Listeners ---
+  // localStorage 기반 북마크 초기화 및 동기화
+  useEffect(() => {
+    // 앱 시작 시 localStorage에서 북마크 로드
+    const storedBookmarks = getBookmarksFromStorage();
+    setBookmarkedNewsIds(storedBookmarks);
+  }, []);
+
+  // --- Firestore Listeners (AI 기능용) ---
   useEffect(() => {
     if (!isAuthReady || !db || !userId) return;
-
-    const bookmarksCollectionRef = collection(db, `artifacts/${APP_ID}/users/${userId}/bookmarks`);
-    const unsubscribeBookmarks = onSnapshot(query(bookmarksCollectionRef), (snapshot) => {
-      const fetchedBookmarks = new Set(snapshot.docs.map(doc => doc.data().newsId));
-      setBookmarkedNewsIds(fetchedBookmarks);
-    }, (error) => console.error("Failed to load bookmarks:", error));
 
     const metricsCollectionRef = collection(db, `artifacts/${APP_ID}/public/data/aiInsightMetrics`);
     const unsubscribeMetrics = onSnapshot(metricsCollectionRef, (snapshot) => {
@@ -386,7 +406,6 @@ const ITNewsApp = () => {
     }, (error) => console.error("Failed to load AI insight comments:", error));
 
     return () => {
-      unsubscribeBookmarks();
       unsubscribeMetrics();
       unsubscribeComments();
     };
@@ -398,16 +417,17 @@ const ITNewsApp = () => {
     setShowMoreCounts(p => ({ ...p, [date]: (p[date] || 10) + 7 }));
   };
 
-  const toggleBookmark = async (newsId) => {
-    if (!db || !userId) return;
-    const bookmarkDocRef = doc(db, `artifacts/${APP_ID}/users/${userId}/bookmarks`, newsId);
-    try {
-      if (bookmarkedNewsIds.has(newsId)) {
-        await deleteDoc(bookmarkDocRef);
+  const toggleBookmark = (newsId) => {
+    setBookmarkedNewsIds(prev => {
+      const newBookmarks = new Set(prev);
+      if (newBookmarks.has(newsId)) {
+        newBookmarks.delete(newsId);
       } else {
-        await setDoc(bookmarkDocRef, { newsId, timestamp: new Date().toISOString() });
+        newBookmarks.add(newsId);
       }
-    } catch (e) { console.error("Bookmark toggle failed: ", e); }
+      saveBookmarksToStorage(newBookmarks);
+      return newBookmarks;
+    });
   };
 
   const callGeminiAPI = async (prompt) => {
