@@ -131,7 +131,16 @@ const ITNewsApp = () => {
       setLoading(false);
     }
   }, []);
+
+// localStorage 기반 북마크 초기화 및 동기화
+  useEffect(() => {
+    // 앱 시작 시 localStorage에서 북마크 로드
+    const storedBookmarks = getBookmarksFromStorage();
+    setBookmarkedNewsIds(storedBookmarks);
+  }, []);
   
+
+
   // --- Firebase Firestore Listeners ---
   useEffect(() => {
     if (!isAuthReady || !db || !userId) return;
