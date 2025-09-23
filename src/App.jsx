@@ -131,17 +131,45 @@ const ITNewsApp = () => {
       setLoading(false);
     }
   }, []);
+  
+// localStorage 유틸리티 함수들
+  const getBookmarksFromStorage = () => {
+    try {
+      const bookmarks = localStorage.getItem('news-bookmarks');
+      return bookmarks ? new Set(JSON.parse(bookmarks)) : new Set();
+    } catch (error) {
+      console.error('북마크 데이터 로드 실패:', error);
+      return new Set();
+    }
+  };
 
-// localStorage 기반 북마크 초기화 및 동기화
+  const saveBookmarksToStorage = (bookmarks) => {
+    try {
+      localStorage.setItem('news-bookmarks', JSON.stringify([...bookmarks]));
+    } catch (error) {
+      console.error('북마크 데이터 저장 실패:', error);
+    }
+  };
+
+  // State for application features
+  const [bookmarkedNewsIds, setBookmarkedNewsIds] = useState(() => getBookmarksFromStorage());
+  const [aiInsights, setAiInsights] = useState({});
+  const [loadingInsight, setLoadingInsight] = useState({});
+  const [aiInsightMetrics, setAiInsightMetrics] = useState({});
+  const [aiInsightComments, setAiInsightComments] = useState([]);
+  const [isGeneratingAiReply, setIsGeneratingAiReply] = useState({});
+
+
+  // --- Firebase Firestore Listeners ---
+
+   // localStorage 기반 북마크 초기화 및 동기화
   useEffect(() => {
     // 앱 시작 시 localStorage에서 북마크 로드
     const storedBookmarks = getBookmarksFromStorage();
     setBookmarkedNewsIds(storedBookmarks);
   }, []);
-  
 
-
-  // --- Firebase Firestore Listeners ---
+  // --- Firestore Listeners (AI 기능용) ---
   useEffect(() => {
     if (!isAuthReady || !db || !userId) return;
 
