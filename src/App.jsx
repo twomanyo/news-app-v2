@@ -30,7 +30,6 @@ const ITNewsApp = () => {
   const [error, setError] = useState("");
   const [latestDate, setLatestDate] = useState("");
   const [activeTab, setActiveTab] = useState("all");
-  const [showMoreCounts, setShowMoreCounts] = useState({});
 
   // State for Firebase services and user authentication
   const [db, setDb] = useState(null);
@@ -292,10 +291,6 @@ const ITNewsApp = () => {
 
   // --- Event Handlers & Logic ---
 
-  const handleLoadMore = (date) => {
-    setShowMoreCounts(p => ({ ...p, [date]: (p[date] || 10) + 7 }));
-  };
-
   const toggleBookmark = (newsId) => {
     setBookmarkedNewsIds(prev => {
       const newBookmarks = new Set(prev);
@@ -417,7 +412,7 @@ const ITNewsApp = () => {
                   <section key={date} className="max-w-4xl mx-auto mb-8">
                       <h2 className="text-lg font-bold text-gray-700 mb-3 pl-2 border-l-4 border-blue-500">{date}</h2>
                       <div className="space-y-4">
-                          {groupedNewsByDate[date].slice(0, showMoreCounts[date] || 10).map((news) => (
+                          {groupedNewsByDate[date].map((news) => (
                               <Card key={news.id} className="p-4 bg-white hover:shadow-md transition-shadow duration-200">
                                 <div className="flex justify-between items-start gap-4 pt-3 border-t border-gray-100">
                                   <h3 className="text-base text-gray-800 mb-1 flex-grow">{news.title}</h3>
@@ -451,11 +446,6 @@ const ITNewsApp = () => {
                                 </div>
                               </Card>
                           ))}
-                          {groupedNewsByDate[date].length > (showMoreCounts[date] || 10) && (
-                              <div className="text-center mt-4">
-                                  <button onClick={() => handleLoadMore(date)} className="px-6 py-2 bg-gray-200 text-gray-800 rounded-full font-semibold hover:bg-gray-300 transition-colors">더 불러오기 ({groupedNewsByDate[date].length - (showMoreCounts[date] || 10)}개 남음)</button>
-                              </div>
-                          )}
                       </div>
                   </section>
               ))}
