@@ -30,6 +30,7 @@ const ITNewsApp = () => {
   const [error, setError] = useState("");
   const [latestDate, setLatestDate] = useState("");
   const [activeTab, setActiveTab] = useState("all");
+  const [activeSubTab, setActiveSubTab] = useState("it");
 
   // State for Firebase services and user authentication
   const [db, setDb] = useState(null);
@@ -267,6 +268,11 @@ const ITNewsApp = () => {
         imageUrl: "https://placehold.co/100x80/FF9900/FFFFFF?text=CLOUD",
         nickname: "클라우드김", companyName: "AWS", jobTitle: "클라우드 아키텍트", recommendationStrength: 4, recommendationReason: "클라우드 도입을 고민하는 기업에게 필독!", likes: 15
       },
+      {
+        title: "서울 아파트 매매가, 3개월 연속 상승세... '부동산 규제 완화' 영향", keyword: "부동산", source: "조선일보", tags: "#부동산 #아파트 #매매가 #투자", url: "https://example.com/news7", date: "2025-08-02", time: '10:30', summary: "서울 지역 아파트 매매가가 3개월 연속 상승세를 기록하며 부동산 시장이 활기를 되찾고 있습니다. 전문가들은 정부의 부동산 규제 완화 정책이 영향을 미쳤다고 분석합니다.", content: "강남, 서초 등 주요 지역을 중심으로 매물이 소진되고 있으며, 신축 아파트 단지의 청약 경쟁률도 높아지고 있습니다. 다만, 금리 인상 가능성과 경기 불확실성이 여전히 변수로 남아있습니다.",
+        imageUrl: "https://placehold.co/100x80/006400/FFFFFF?text=REAL+ESTATE",
+        nickname: "집주인최", companyName: "대한부동산", jobTitle: "부동산 중개사", recommendationStrength: 5, recommendationReason: "실거주와 투자 모두 고려해야 할 시점입니다.", likes: 2
+      },
     ];
 
     const parsedNews = commonSimulatedData.map(news => ({
@@ -305,24 +311,29 @@ const ITNewsApp = () => {
   };
 
   // --- Rendering Logic ---
-  const recentNews = newsData.filter(news => {
+  const filteredNewsData = newsData.filter(news => {
+    // 기본 필터링: 최근 7일 뉴스만
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    return new Date(news.date) >= oneWeekAgo;
-  });
-  const uniqueKeywords = [...new Set(recentNews.map(news => news.keyword).filter(Boolean))];
+    const isRecent = new Date(news.date) >= oneWeekAgo;
 
-  const filteredNewsData = newsData.filter(news => {
+    // 메인 탭에 따른 필터링
     if (activeTab === "all") {
-      const oneWeekAgo = new Date();
-      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-      const isRecent = new Date(news.date) >= oneWeekAgo;
-      const matchesKeyword = !selectedKeyword || news.keyword === selectedKeyword;
-      return isRecent && matchesKeyword;
+      if (activeSubTab === "it") {
+        const matchesKeyword = !selectedKeyword || news.keyword === selectedKeyword;
+        const isNotRealEstate = news.keyword !== "부동산";
+        return isRecent && matchesKeyword && isNotRealEstate;
+      } else if (activeSubTab === "realestate") {
+        return isRecent && news.tags.includes("부동산");
+      }
     }
-    if (activeTab === "bookmarks") return bookmarkedNewsIds.has(news.id);
+    if (activeTab === "bookmarks") {
+      return bookmarkedNewsIds.has(news.id);
+    }
     return true;
   });
+
+  const uniqueKeywords = [...new Set(newsData.filter(n => n.keyword !== '부동산').map(news => news.keyword).filter(Boolean))];
 
   const groupedNewsByDate = filteredNewsData.reduce((groups, news) => {
     const date = news.date || "날짜 없음";
@@ -352,7 +363,7 @@ const ITNewsApp = () => {
           {["all", "bookmarks"].map(tab => (
             <button
               key={tab}
-              onClick={() => { setActiveTab(tab); }}
+              onClick={() => { setActiveTab(tab); setActiveSubTab(tab === 'all' ? 'it' : null); setSelectedKeyword(null); }}
               className={`py-3 px-5 text-base font-semibold transition-colors duration-200 ${
                 activeTab === tab
                   ? "text-blue-600 border-b-2 border-blue-600"
@@ -363,6 +374,27 @@ const ITNewsApp = () => {
             </button>
           ))}
         </div>
+        {/* Sub-navigation for "전체" tab */}
+        {activeTab === 'all' && (
+          <div className="flex justify-start border-b border-gray-100 bg-gray-100 px-4">
+            <button
+              onClick={() => setActiveSubTab("it")}
+              className={`py-2 px-4 text-sm font-medium transition-colors duration-200 ${
+                activeSubTab === 'it' ? 'bg-white rounded-t-lg text-blue-600' : 'text-gray-600 hover:text-blue-600 hover:bg-gray-200 rounded-t-lg'
+              }`}
+            >
+              IT
+            </button>
+            <button
+              onClick={() => { setActiveSubTab("realestate"); setSelectedKeyword(null); }}
+              className={`py-2 px-4 text-sm font-medium transition-colors duration-200 ${
+                activeSubTab === 'realestate' ? 'bg-white rounded-t-lg text-blue-600' : 'text-gray-600 hover:text-blue-600 hover:bg-gray-200 rounded-t-lg'
+              }`}
+            >
+              부동산
+            </button>
+          </div>
+        )}
       </header>
 
       {/* Main Content Area */}
@@ -370,9 +402,9 @@ const ITNewsApp = () => {
         {loading && <div className="text-center text-gray-500 p-8"><div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div><p>뉴스 데이터를 불러오는 중...</p></div>}
         {error && !loading && <Alert variant="destructive" className="mx-auto max-w-4xl">{error}</Alert>}
 
-        {activeTab === 'all' && !loading && (
+        {activeTab === 'all' && activeSubTab === 'it' && !loading && (
           <div className="max-w-4xl mx-auto mb-4">
-            <div className="flex flex-wrap gap-2">
+            <div className="flex overflow-x-auto whitespace-nowrap gap-2 p-2 -m-2 scrollbar-hide">
               <button
                 onClick={() => setSelectedKeyword(null)}
                 className={`px-4 py-1 rounded-full text-sm font-semibold transition-colors duration-200 ${
