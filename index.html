@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -1488,4 +1488,77 @@
 
     <!-- [복구됨] 타임라인 뷰 -->
     <section id="timeline-view" class="hidden max-w-3xl mx-auto p-4 md:p-8"> <!-- 너비 변경 -->
-     
+        <!-- [수정됨] 헤더 레이아웃 변경 -->
+        <header class="mb-4 pb-4 border-b">
+            <button onclick="showFeedList()" class="text-indigo-600 hover:text-indigo-800 font-semibold text-sm">
+                &larr; 피드 목록으로 돌아가기
+            </button>
+        </header>
+
+        <!-- [수정됨] 서비스명 제목을 돌아가기 버튼 다음 줄로 이동 -->
+        <h2 id="timeline-header-title" class="text-2xl font-bold text-gray-900 my-6">
+            <!-- JavaScript가 여기에 제목을 삽입합니다 -->
+        </h2>
+
+        <div id="timeline-content" class="space-y-6">
+            <!-- 타임라인 컨텐츠 동적 삽입 -->
+        </div>
+    </section>
+
+    <!-- [추가됨] 상세 페이지 뷰 -->
+    <section id="detail-view" class="hidden max-w-3xl mx-auto p-4 md:p-8"> <!-- 너비 변경 -->
+        <header class="mb-4 pb-4 border-b">
+            <button onclick="showFeedList()" class="text-indigo-600 hover:text-indigo-800 font-semibold text-sm">
+                &larr; 피드 목록으로 돌아가기
+            </button>
+        </header>
+
+        <div id="detail-content" class="mt-6">
+            <!-- JavaScript가 여기에 상세 피드 내용을 삽입합니다. -->
+        </div>
+    </section>
+    
+    <!-- [복구됨] 회원가입 뷰 -->
+    <section id="signup-view" class="hidden max-w-3xl mx-auto p-4 md:p-8">
+        <header class="mb-4 pb-4 border-b">
+            <button onclick="showFeedList()" class="text-indigo-600 hover:text-indigo-800 font-semibold text-sm">
+                &larr; 피드 목록으로 돌아가기
+            </button>
+        </header>
+        
+        <div class="mt-6 bg-white p-8 rounded-xl shadow-lg">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">회원가입</h2>
+            <form id="signup-form" class="space-y-4">
+                <div>
+                    <label for="nickname" class="block text-sm font-medium text-gray-700">닉네임</label>
+                    <input type="text" id="nickname" name="nickname" required readonly
+                           class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-gray-100">
+                </div>
+                <div>
+                    <label for="company" class="block text-sm font-medium text-gray-700">회사명</label>
+                    <input type="text" id="company" name="company" required
+                           class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div>
+                    <label for="job" class="block text-sm font-medium text-gray-700">직무</label>
+                    <!-- [수정] 직무 옵션 변경 (5개) -->
+                    <select id="job" name="job" required
+                            class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                        <option value="">직무를 선택하세요</option>
+                        <option value="기획">기획</option>
+                        <option value="개발">개발</option>
+                        <option value="디자인">디자인</option>
+                        <option value="스탭">스탭</option>
+                        <option value="기타">기타</option>
+                    </select>
+                </div>
+                <button type="submit" 
+                        class="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors">
+                    가입하기
+                </button>
+            </form>
+        </div>
+    </section>
+
+</body>
+</html>
