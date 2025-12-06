@@ -12,9 +12,9 @@
             font-family: 'Inter', sans-serif;
             background-color: #f0f2f5;
         }
-        /* [수정됨] G열 텍스트 줄 제한 (6줄) - 목록 뷰에만 적용 */
+        /* [수정됨] G열 텍스트 줄 제한 (높이 증가: 12rem) - 목록 뷰에만 적용 */
         #main-view .content-container {
-            max-height: 9rem; /* 6-line height */
+            max-height: 12rem; /* 약 8줄 정도로 높이 확장 */
             transition: max-height 0.3s ease-in-out;
             overflow: hidden;
         }
@@ -234,8 +234,9 @@
         // [추가됨] 리뷰 시트 설정
         const REVIEW_SHEET_ID = "1TurOoN16zEffuLrg4bCtAC9m2XiFmSb0JWaMTTxRPag";
         const REVIEW_SHEET_NAME = "launchreview";
-        // [수정] 리뷰 시트 (A:F) = IDNO, Nickname(B), Rating(C), Date(D), Comment(E), Job(F)
-        const REVIEW_BASE_URL = `https://sheets.googleapis.com/v4/spreadsheets/${REVIEW_SHEET_ID}/values/${REVIEW_SHEET_NAME}!A:F?key=${API_KEY}`;
+        // [수정] 리뷰 시트 (A:G) = IDNO, Nickname(B), Rating(C), Date(D), Comment(E), Job(F), Company(G)
+        // 회사명을 G열에 저장하고 읽어오기 위해 범위 확장
+        const REVIEW_BASE_URL = `https://sheets.googleapis.com/v4/spreadsheets/${REVIEW_SHEET_ID}/values/${REVIEW_SHEET_NAME}!A:G?key=${API_KEY}`;
         
         // --- [신규] Google Apps Script URL ---
         // !!! 중요: 여기에 본인의 Google Apps Script 배포 URL을 입력하세요. !!!
@@ -394,18 +395,22 @@
             if (isExpandedDefault) {
                 const savedNickname = getCookie('userNickname') || ''; // [추가] 쿠키에서 닉네임 로드
                 
+                // [수정] 'Inspire comments' -> '전문가 별점', 닉네임 옆에 회사명 입력 추가
                 const commentFormHtml = `
                     <div class="mt-6 p-4 border rounded-lg bg-gray-50">
-                        <h4 class="font-semibold text-gray-800 mb-2">Inspire comments</h4> <!-- [수정] 텍스트 변경 -->
+                        <h4 class="font-semibold text-gray-800 mb-2">전문가 별점</h4> <!-- [수정] 텍스트 변경 -->
                         
-                        <!-- [추가] 닉네임 및 직무 입력 -->
+                        <!-- [추가] 닉네임, 회사명, 직무 입력 -->
                         <div class="flex gap-2 mb-2">
                             <input type="text" id="comment-nickname-${feedId}" 
                                    placeholder="닉네임"
                                    value="${savedNickname}"
                                    oninput="setCookie('userNickname', this.value, 30)"
-                                   class="w-1/2 p-2 border rounded-md text-sm">
-                            <select id="comment-job-${feedId}" class="w-1/2 p-2 border rounded-md text-sm bg-white">
+                                   class="w-1/3 p-2 border rounded-md text-sm">
+                            <input type="text" id="comment-company-${feedId}" 
+                                   placeholder="회사명"
+                                   class="w-1/3 p-2 border rounded-md text-sm">
+                            <select id="comment-job-${feedId}" class="w-1/3 p-2 border rounded-md text-sm bg-white">
                                 <option value="">직무 선택</option>
                                 <option value="기획">기획</option>
                                 <option value="개발">개발</option>
@@ -424,8 +429,10 @@
                             <input type="radio" id="star1-${feedId}" name="rating-${feedId}" value="1"><label for="star1-${feedId}">★</label>
                         </div>
                         <textarea id="comment-text-${feedId}" class="w-full p-2 border rounded-md text-sm" rows="3" placeholder="의견을 남겨주세요..."></textarea>
-                        <!-- [수정] feedId와 idno를 handleReviewSubmit으로 전달 -->
-                        <button onclick="handleReviewSubmit(this, '${feedId}', '${idno}')" 
+                        
+                        <!-- [수정] feedId와 idno를 handleReviewSubmit으로 전달 (data attribute 사용) -->
+                        <button onclick="handleReviewSubmit(this, '${feedId}')" 
+                                data-idno="${idno}"
                                 class="w-full mt-2 bg-indigo-500 text-white font-semibold text-sm px-3 py-2 rounded-md hover:bg-indigo-600 shadow-sm">
                             댓글 등록
                         </button>
@@ -444,13 +451,18 @@
                     <!-- 댓글 입력창 -->
                     ${commentFormHtml}
 
-                    <!-- [수정] 실제 댓글 목록 (새 컬럼 반영) -->
+                    <!-- [수정] 실제 댓글 목록 (새 컬럼 반영: 회사명 포함) -->
                     <div id="review-content-${feedId}" class="mt-6 space-y-4" data-comment-count="${reviewData.count}">
                         ${reviewData.comments.map(comment => `
                             <div class="p-4 bg-gray-50 rounded-lg border">
                                 <div class="flex items-center justify-between mb-2">
-                                    <!-- 작성자명 (B열) + 직무 (F열) -->
-                                    <p class="font-semibold text-sm text-gray-800">${comment.nickname} <span class="text-xs text-gray-600 font-normal">(${comment.job})</span></p>
+                                    <!-- 작성자명 (B열) + 회사명(G열) + 직무 (F열) -->
+                                    <p class="font-semibold text-sm text-gray-800">
+                                        ${comment.nickname} 
+                                        <span class="text-xs text-gray-600 font-normal">
+                                            (${comment.company ? comment.company + ' / ' : ''}${comment.job})
+                                        </span>
+                                    </p>
                                     <!-- 별점 (C열) -->
                                     <span class="text-xs font-bold text-gray-600 flex items-center">
                                         <span class="text-yellow-500 mr-1">⭐️</span>
@@ -484,33 +496,43 @@
                 `;
             }
 
-            // --- [수정] 목록 뷰 (isExpandedDefault = false) - 요약 목업 ---
+            // --- [수정] 목록 뷰 (isExpandedDefault = false) - 요약 표시 (이미지 위) ---
             if (!reviewData || reviewData.comments.length === 0) return ''; // No comments to show
 
             const firstComment = reviewData.comments[0];
-            let commentText = firstComment.text;
-            if (commentText.length > 40) {
-                commentText = commentText.substring(0, 40) + "...";
-            }
             
-            const commentAuthor = firstComment.nickname; // [수정] B열 닉네임만 사용
-
+            // [수정] 디자인 변경: 헤더에 평균 별점/총 평가수, 우상단 더보기 버튼
+            // [수정] 메타데이터에 회사명 추가 (직무 - 닉네임 - 회사명 - 날짜)
             return `
-                <hr class="my-4 border-gray-200">
-                <div class="review-summary-container">
-                    <!-- 실제 평점/투표수 -->
-                    <div class="flex items-center gap-2 mb-2">
-                        <span class="text-yellow-500">⭐️</span>
-                        <span class="font-bold text-gray-800 text-sm">${reviewData.rating.toFixed(1)} 점</span>
-                        <span class="text-sm text-gray-500">(총 평가 ${reviewData.count} 개)</span>
+                <div class="review-summary-container mb-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
+                    <!-- 헤더: 별점 정보 및 더보기 버튼 -->
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <div class="flex items-center gap-1 mb-1">
+                                <span class="text-xs font-bold text-gray-700">업데이트 평균 별점</span>
+                                <span class="text-yellow-500 text-xs">⭐️</span>
+                                <span class="font-bold text-gray-900 text-sm">${reviewData.rating.toFixed(1)}</span>
+                            </div>
+                            <div class="text-xs text-gray-500">
+                                총 평가수 : ${reviewData.count}
+                            </div>
+                        </div>
+                        <!-- 우상단 더보기 버튼 -->
+                        <button onclick="showDetailView('${feedId}')" class="text-xs text-indigo-600 font-bold hover:text-indigo-800">
+                            더보기 >
+                        </button>
                     </div>
                     
-                    <!-- [수정] 실제 한 줄 의견 (레이아웃 변경) -->
-                    <div class="text-sm text-gray-700">
-                        <p class="truncate">
-                            "${commentText}"
-                            <span class="text-xs text-gray-500 ml-1">(${commentAuthor})</span>
+                    <!-- 최신 리뷰 텍스트 (2줄 말줄임) -->
+                    <div class="text-sm text-gray-800 mb-2">
+                        <p class="line-clamp-2 leading-relaxed">
+                            "${firstComment.text}"
                         </p>
+                    </div>
+
+                    <!-- 메타데이터 (직무 - 닉네임 - 회사명 - 날짜) -->
+                    <div class="text-xs text-gray-400 text-right">
+                        ( ${firstComment.job} - ${firstComment.nickname} - ${firstComment.company ? firstComment.company + ' - ' : ''}${firstComment.date} )
                     </div>
                 </div>
             `;
@@ -828,12 +850,12 @@
 
                 if (!updateContentBody) return;
 
-                // [수정됨] 6줄 높이 계산 (9rem)
-                const maxInitialHeight = 144; // 9rem (16px * 9)
+                // [수정됨] 6줄 높이 계산 (9rem) -> [수정] 12rem (192px)
+                const maxInitialHeight = 192; // 12rem * 16px
                 const fullHeight = updateContentBody.scrollHeight;
                 const feed = allFeedData[feedId];
 
-                // H, J/K(이미지 1개 초과), L열 중 하나라도 있거나 G열이 6줄을 넘으면 '더보기' 표시
+                // H, J/K(이미지 1개 초과), L열 중 하나라도 있거나 G열이 제한을 넘으면 '자세히 보기' 표시
                 const shouldShowMoreButton = feed?.changePurpose || feed?.imageUrls?.length > 1 || feed?.videoUrl || fullHeight > maxInitialHeight;
 
                 if (shouldShowMoreButton) {
@@ -961,19 +983,24 @@
         }
 
         // [수정] 리뷰 등록 버튼 핸들러 (Google Apps Script POST)
-        async function handleReviewSubmit(buttonElement, feedId, idno) {
+        async function handleReviewSubmit(buttonElement, feedId) {
             // [제거] 로그인 체크
             // if (!mockUser.isLoggedIn) { ... }
             
+            // [수정] idno는 버튼의 data 속성에서 안전하게 가져옴
+            const idno = buttonElement.getAttribute('data-idno');
+
             // 1. 유효성 검사
             const nickname = document.getElementById(`comment-nickname-${feedId}`).value;
+            // [수정] 회사명 추가
+            const company = document.getElementById(`comment-company-${feedId}`).value;
             const job = document.getElementById(`comment-job-${feedId}`).value;
             const commentText = document.getElementById(`comment-text-${feedId}`).value;
             const ratingEl = document.querySelector(`input[name="rating-${feedId}"]:checked`);
             const rating = ratingEl ? ratingEl.value : null;
 
-            if (!nickname || !job || !commentText || !rating) {
-                alert('별점, 닉네임, 직무, 댓글을 모두 입력해주세요.');
+            if (!nickname || !company || !job || !commentText || !rating) {
+                alert('별점, 닉네임, 회사명, 직무, 댓글을 모두 입력해주세요.');
                 return;
             }
             
@@ -985,12 +1012,13 @@
             // 2. 데이터 준비
             const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
             const newComment = {
-                idno: idno, // A열
+                idno: idno, // A열 (피드 시트의 O열 값)
                 nickname: nickname, // B열
                 rating: parseFloat(rating), // C열
                 date: today, // D열
                 text: commentText, // E열
-                job: job // F열
+                job: job, // F열
+                company: company // [추가] G열
             };
 
             // 3. fetch POST 요청 (Google Apps Script)
@@ -1007,6 +1035,8 @@
                 formData.append('date', newComment.date);
                 formData.append('text', newComment.text);
                 formData.append('job', newComment.job);
+                // [추가] 회사명 추가
+                formData.append('company', newComment.company);
 
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
@@ -1034,10 +1064,14 @@
                 allReviewsData[idno].rating = allReviewsData[idno].totalRating / allReviewsData[idno].count;
 
                 // 6. DOM에 즉시 반영 (새 댓글 HTML)
+                // [수정] 회사명 포함
                 const newCommentHtml = `
                     <div class="p-4 bg-gray-50 rounded-lg border">
                         <div class="flex items-center justify-between mb-2">
-                            <p class="font-semibold text-sm text-gray-800">${newComment.nickname} <span class="text-xs text-gray-600 font-normal">(${newComment.job})</span></p>
+                            <p class="font-semibold text-sm text-gray-800">
+                                ${newComment.nickname} 
+                                <span class="text-xs text-gray-600 font-normal">(${newComment.company} / ${newComment.job})</span>
+                            </p>
                             <span class="text-xs font-bold text-gray-600 flex items-center">
                                 <span class="text-yellow-500 mr-1">⭐️</span>
                                 ${newComment.rating.toFixed(1)}
@@ -1054,6 +1088,7 @@
                 
                 // 7. 폼 초기화
                 document.getElementById(`comment-text-${feedId}`).value = '';
+                document.getElementById(`comment-company-${feedId}`).value = ''; // [추가] 초기화
                 document.getElementById(`comment-job-${feedId}`).value = '';
                 if (ratingEl) ratingEl.checked = false;
                 document.querySelectorAll(`.star-rating input[name="rating-${feedId}"] ~ label`).forEach(lbl => lbl.style.color = '#d1d5db');
@@ -1104,17 +1139,21 @@
                 // 1. 리뷰 데이터 처리 (먼저)
                 allReviewsData = {};
                 if (reviewData.values && reviewData.values.length > 1) {
-                    reviewData.values.slice(1).forEach(row => {
+                    // [수정] idx 파라미터 추가하여 등록 순서 추적
+                    reviewData.values.slice(1).forEach((row, idx) => {
                         const idno = (row[0] || '').trim(); // A열: IDNO
                         if (!idno) return; // IDNO 없으면 스킵
 
                         // [수정] 새 컬럼 구조에 맞게 매핑
+                        // A: IDNO, B: Nickname, C: Rating, D: Date, E: Text, F: Job, G: Company
                         const comment = {
                             nickname: row[1] || 'Anonymous', // B열: 작성자명
                             rating: parseFloat(row[2]) || 0, // C열: 별점
                             date: row[3] || '', // D열: 작성일자
                             text: row[4] || '', // E열: 코멘트
-                            job: row[5] || '기타' // [추가] F열: 직무
+                            job: row[5] || '기타', // [추가] F열: 직무
+                            company: row[6] || '', // [추가] G열: 회사명
+                            _index: idx // [추가] 시트 등록 순서 (최신순 정렬용)
                         };
 
                         if (!allReviewsData[idno]) {
@@ -1133,13 +1172,17 @@
                         }
                     });
 
-                    // 평균 계산 및 [신규] 댓글 최신순 정렬
+                    // 평균 계산 및 [신규] 댓글 최신순 정렬 (날짜 DESC -> 등록순서 DESC)
                     Object.keys(allReviewsData).forEach(idno => {
                         if (allReviewsData[idno].count > 0) {
                             allReviewsData[idno].rating = allReviewsData[idno].totalRating / allReviewsData[idno].count;
                         }
-                        // D열(날짜) 기준 내림차순 정렬 (최신순)
-                        allReviewsData[idno].comments.sort((a, b) => b.date.localeCompare(a.date));
+                        // [수정] 날짜 내림차순 정렬, 날짜가 같으면 등록 순서(_index) 내림차순 (최신글 우선)
+                        allReviewsData[idno].comments.sort((a, b) => {
+                            const dateComparison = b.date.localeCompare(a.date);
+                            if (dateComparison !== 0) return dateComparison;
+                            return b._index - a._index;
+                        });
                     });
                 }
                 
@@ -1229,13 +1272,18 @@
 
             feeds.forEach(feed => {
                 const styling = getCompanyStyling(feed.company);
-                const tagHtml = feed.tags.map(tag => `<span class="tag ${styling.tag}">#${tag}</span>`).join('');
+                
+                // [수정] 태그 생성: 날짜 옆에 붙이기 위해 스타일 변경 (회색 텍스트, 기존 .tag 클래스 제거)
+                const tagHtml = feed.tags.map(tag => `<span class="text-xs text-gray-400 ml-2 font-medium">#${tag}</span>`).join('');
+
+                // [추가] 히스토리 개수 계산
+                const historyCount = allTimelineData[feed.serviceKey] ? allTimelineData[feed.serviceKey].length : 0;
 
                 // 미디어: 첫 번째 이미지만 표시
                 const currentImageUrl = feed.imageUrls[0] || '';
                 let mediaHtml = currentImageUrl ? `
                     <div class="mb-4 rounded-lg overflow-hidden border border-gray-200 relative">
-                        <img src="${currentImageUrl}"
+                        <img src="${currentImageUrl}" 
                              alt="${feed.title} 이미지" class="feed-image"
                              onerror="this.onerror=null; this.src='https://placehold.co/600x300/e5e7eb/374151?text=No+Image'"
                              onclick="openImageViewer(this)" loading="lazy">
@@ -1259,11 +1307,13 @@
                                  onclick="showTimelineView('${feed.serviceKey}', '${feed.company} _ ${feed.service}')">
                                 <div class="w-10 h-10 ${styling.bg} rounded-full flex items-center justify-center text-white text-xl font-bold mr-3">${styling.icon}</div>
                                 <div>
-                                    <p class="font-semibold text-gray-800">
+                                    <p class="font-semibold text-gray-800 text-sm">
                                         ${feed.company} _ ${feed.service}
-                                        <span class="text-indigo-600 text-xs font-bold ml-1 align-middle leading-none">히스토리 ></span>
                                     </p>
-                                    <p class="text-xs text-gray-500">${feed.date} 업데이트</p>
+                                    <!-- [수정] 히스토리 텍스트 앞에 전구 이모지 추가 -->
+                                    <p class="text-indigo-600 text-xs font-bold mt-1">
+                                        💡 업데이트 히스토리 ${historyCount} 개 >
+                                    </p>
                                 </div>
                             </div>
 
@@ -1275,13 +1325,19 @@
                             </svg>
                         </div>
 
-                        <!-- 제목 (F열) -->
-                        <div class="flex justify-between items-start mb-2">
-                            <h2 class="text-xl font-bold text-gray-900 leading-tight pr-4">${feed.title}</h2>
+                        <!-- [수정됨] 제목 (F열) 및 날짜/태그 위치 조정 -->
+                        <div class="mb-3">
+                            <h2 class="text-xl font-bold text-gray-900 leading-tight mb-1">${feed.title}</h2>
+                            <div class="flex items-center">
+                                <p class="text-xs text-gray-500">${feed.date}</p>
+                                <!-- [수정] 태그 삽입 (날짜 옆, 회색) -->
+                                ${tagHtml}
+                            </div>
                         </div>
 
-                        <!-- 태그 (C, D열) -->
-                        <div class="flex justify-end mb-4">${tagHtml}</div>
+                        <!-- [수정] 리뷰 요약 표시 (이미지 위로 이동) -->
+                        ${reviewHtml}
+
                         <!-- 미디어 (J열 이미지) -->
                         ${mediaHtml}
 
@@ -1292,11 +1348,11 @@
                             </div>
                         </div>
 
-                        <!-- [수정] 더보기 버튼 (페이지 전환) -->
-                        <div class="flex justify-end items-center mt-1 content-toggle-button-wrapper" style="display: none;">
-                            <button onclick="showDetailView('${feed.id}')"
-                                    class="text-indigo-500 hover:text-indigo-600 font-semibold text-sm">
-                                더보기
+                        <!-- [수정] 자세히 보기 버튼 (파란색 버튼) -->
+                        <div class="flex justify-end items-center mt-3 content-toggle-button-wrapper" style="display: none;">
+                            <button onclick="showDetailView('${feed.id}')" 
+                                    class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-sm transition-colors">
+                                자세히 보기
                             </button>
                         </div>
 
@@ -1311,8 +1367,7 @@
                             </div>
                         ` : ''}
 
-                        <!-- [수정] 피드 목록 리뷰 요약 표시 -->
-                        ${reviewHtml}
+                        <!-- [제거됨] 피드 목록 하단 리뷰 제거 -->
                     </div>
                 `;
                 feedListElement.insertAdjacentHTML('beforeend', cardHtml);
@@ -1422,10 +1477,10 @@
             <div class="flex justify-center items-center relative pt-4">
                 <!-- 제목 -->
                 <div class="text-center">
-                    <h1 class="text-2xl font-extrabold text-gray-800 mb-2">
-                        <!-- [수정] 안테나 제거, 텍스트 변경 -->
-                        InspireOn
+                    <h1 class="text-2xl font-extrabold text-gray-800 mb-1">
+                        Sub.Up
                     </h1>
+                    <p class="text-sm text-gray-400 font-medium">subscribe updates !</p>
                 </div>
                 
                 <!-- [복구] 햄버거 메뉴 -->
@@ -1454,13 +1509,13 @@
                 <div class="flex items-center gap-3">
                     <!-- [수정됨] 검색창 (너비 가변) -->
                     <div class="relative flex-grow">
-                        <input type="text" id="search-input"
+                        <input type="text" id="search-input" 
                                placeholder="피드 검색 (제목, 내용, 시사점 포함)"
                                class="w-full p-3 pl-10 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 shadow-sm text-sm">
                         <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
                     <!-- [추가됨] AI 클릭 버튼 -->
-                    <button id="ai-filter-button"
+                    <button id="ai-filter-button" 
                             onclick="handleAiFilterToggle(this)"
                             class="">
                         AI ✨
